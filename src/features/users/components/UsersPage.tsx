@@ -5,8 +5,11 @@ import { useMemo, useState } from "react";
 import { CustomFilters, FilterType } from "@/shared/components/CustomFilters";
 import { userRepository } from "../hooks/useUsers";
 import { UserWithActivity } from "../types";
-import { columns } from "./columns";
 import { CustomTable } from "@/shared/components/CustomTable";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import UsersCard from "./UsersCard";
+import { UsersColumns } from "./UsersColumns";
 
 export const UsersPage = () => {
   const searchParams = useSearchParams();
@@ -14,6 +17,9 @@ export const UsersPage = () => {
 
   const [filter, setFilter] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) ?? null,
+  );
+  const [search, setSearch] = useState<string | null>(
+    searchParams.get("search") ?? null,
   );
 
   const { data, isError, isLoading } = userRepository.hooks.useUsers();
@@ -30,6 +36,7 @@ export const UsersPage = () => {
   };
 
   const handleSearch = (value: string | null) => {
+    setSearch(value);
     updateParams("search", value);
   };
 
@@ -43,6 +50,14 @@ export const UsersPage = () => {
 
     let result: UserWithActivity[] = [...data];
 
+    if (search) {
+      result = result.filter(
+        (f) =>
+          f.name.toLowerCase().includes(search.toLocaleLowerCase()) ||
+          f.email.toLowerCase().includes(search.toLocaleLowerCase()),
+      );
+    }
+
     if (filter === "has-pending") {
       result = result.filter((u) => u.pendingTodos > 0);
     } else if (filter === "no-completed") {
@@ -50,11 +65,11 @@ export const UsersPage = () => {
     }
 
     return result;
-  }, [data, filter]);
+  }, [data, filter, search]);
 
   return (
-    <div className="container mx-auto flex flex-col items-center py-8 px-40">
-      <div className="flex flex-row justify-between items-center mb-6 gap-6 w-full">
+    <div className="container mx-auto flex flex-col py-8 px-6 xl:px-32 2xl:px-40">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-6 w-full">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
           <p className="text-muted-foreground mt-1">Monitor user activity</p>
@@ -63,9 +78,10 @@ export const UsersPage = () => {
           <CustomFilters filter={filter} onFilterChange={handleFilter} />
         </div>
       </div>
-      <div className="hidden sm:flex">
+
+      <div className="hidden w-full sm:flex">
         <CustomTable
-          columns={columns}
+          columns={UsersColumns}
           data={datas}
           isError={isError}
           isLoading={isLoading}
@@ -73,6 +89,36 @@ export const UsersPage = () => {
           defaultSearch={searchParams.get("search") ?? null}
           pageSize={5}
         />
+      </div>
+
+      <div className="flex flex-col w-full gap-4 sm:hidden">
+        <Input
+          placeholder="Search name, email..."
+          value={search ?? ""}
+          onChange={(e) => handleSearch(e.target.value)}
+          disabled={isLoading || isError}
+        />
+
+        {isError ? (
+          <div className="text-center py-8">
+            <p className="text-destructive font-medium">Failed to load users</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Please try again later
+            </p>
+          </div>
+        ) : isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-35 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : datas.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No users found
+          </div>
+        ) : (
+          datas.map((user) => <UsersCard key={user.id} user={user} />)
+        )}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowBigLeft } from "lucide-react";
 import { useState } from "react";
+import { CardError } from "@/shared/components/CardError";
 
 type Props = {
   id: number;
@@ -23,10 +24,28 @@ export const UsersDetailPage = ({ id }: Props) => {
   const { users, posts, todos, isError, isLoading } =
     userRepository.hooks.useUsersDetail(id);
 
-  console.log(users);
+  if (isNaN(id) || id <= 0) {
+    return (
+      <CardError
+        desc="The user ID provided is not valid"
+        title="Invalid User ID"
+        url={backUrl}
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <CardError
+        desc="The user you are looking for does not exist or has been removed"
+        title="User Not Found"
+        url={backUrl}
+      />
+    );
+  }
 
   return (
-    <div className="container mx-auto flex flex-col items-center py-8 px-40 gap-6">
+    <div className="container mx-auto flex flex-col items-center py-8 px-6 lg:px-40 gap-6">
       <div className="flex gap-3 items-center w-full">
         <Button
           variant="outline"
