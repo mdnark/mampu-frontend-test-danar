@@ -71,6 +71,7 @@ export const UsersPage = () => {
           isLoading={isLoading}
           onSearchChange={handleSearch}
           defaultSearch={searchParams.get("search") ?? null}
+          pageSize={5}
         />
       </div>
     </div>

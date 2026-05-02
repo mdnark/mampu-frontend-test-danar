@@ -34,6 +34,7 @@ interface DataTableProps<TData, TValue> {
   isError?: boolean;
   onSearchChange?: (value: string | null) => void;
   defaultSearch?: string | null;
+  pageSize?: number;
 }
 
 type SearchableRow = {
@@ -57,6 +58,7 @@ export function CustomTable<TData, TValue>({
   isError = false,
   defaultSearch,
   onSearchChange,
+  pageSize = 5,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -81,6 +83,11 @@ export function CustomTable<TData, TValue>({
       sorting,
       columnFilters,
       globalFilter: debouncedFilter === "" ? null : debouncedFilter,
+    },
+    initialState: {
+      pagination: {
+        pageSize,
+      },
     },
   });
 
@@ -179,22 +186,29 @@ export function CustomTable<TData, TValue>({
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
+        <p className="text-sm text-muted-foreground">
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()} ({table.getFilteredRowModel().rows.length}{" "}
+          data)
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage() || isLoading || isError}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage() || isLoading || isError}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
